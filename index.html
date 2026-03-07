@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Happy Women's Day - Chị Loan</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background-color: #050011;
+            overflow: hidden; 
+            font-family: 'Quicksand', sans-serif;
+            color: white;
+            touch-action: none;
+        }
+
+        /* --- MÀN HÌNH YÊU CẦU XOAY NGANG --- */
+        #rotate-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #050011; z-index: 9999; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; color: #ffb6c1; transition: opacity 0.5s ease;
+        }
+
+        .rotate-icon {
+            font-size: 4rem; margin-bottom: 20px;
+            animation: rotateDevice 2s infinite ease-in-out;
+        }
+
+        @keyframes rotateDevice {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(-90deg); }
+            100% { transform: rotate(-90deg); }
+        }
+
+        #rotate-overlay p { font-size: 1.2rem; line-height: 1.5; padding: 0 20px; text-shadow: 0 0 10px #ff1493; }
+
+        /* --- CÁC THÀNH PHẦN CHÍNH --- */
+        #canvas { position: absolute; top: 0; left: 0; z-index: 1; }
+
+        #click-hint {
+            position: absolute; bottom: 8%; left: 50%;
+            transform: translateX(-50%); z-index: 10;
+            font-size: clamp(1rem, 3vw, 1.5rem); 
+            color: #ffb6c1; text-shadow: 0 0 15px #ff1493, 0 0 30px #ff007f;
+            cursor: pointer; animation: pulse 1.5s infinite;
+            font-weight: 600; letter-spacing: 2px; white-space: nowrap;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+            50% { opacity: 0.4; transform: translateX(-50%) scale(0.95); }
+        }
+
+        #final-scene {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            z-index: 5; display: none; pointer-events: none; 
+        }
+
+        /* Khung lời chúc */
+        .message-box {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(20, 0, 30, 0.4); border: 1px solid rgba(255, 105, 180, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(255, 20, 147, 0.37);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            padding: clamp(20px, 4vh, 50px) clamp(30px, 5vw, 60px); 
+            border-radius: 24px; text-align: center; 
+            width: max-content; max-width: 85%; 
+            /* Ban đầu ẩn và không nhận click để không chặn ảnh */
+            opacity: 0; pointer-events: none; transition: opacity 0.8s ease;
+            z-index: 10;
+        }
+
+        .message-box h1 {
+            font-family: 'Dancing Script', cursive; color: #fff; text-shadow: 0 0 15px #ff1493, 0 0 30px #ff007f;
+            margin-top: 0; margin-bottom: clamp(10px, 3vh, 25px);
+            font-size: clamp(2.5rem, 8vw, 4rem); line-height: 1; min-height: clamp(2.5rem, 8vw, 4rem);
+        }
+
+        .message-box p {
+            font-size: clamp(1rem, 2.5vw, 1.3rem); line-height: 1.6; color: #fff0f5; 
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5); white-space: pre-line;
+        }
+
+        .signature {
+            margin-top: clamp(10px, 3vh, 25px); font-size: clamp(1.4rem, 4vw, 1.8rem) !important; 
+            font-family: 'Dancing Script', cursive; color: #ffb6c1 !important;
+        }
+
+        .typing-cursor::after { content: '|'; animation: blink 0.7s infinite; color: #ff69b4; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* --- NÚT ĐÓNG HỘP THƯ (X) --- */
+        #close-msg-btn {
+            position: absolute; top: 15px; right: 20px;
+            background: none; border: none;
+            color: rgba(255, 255, 255, 0.5); font-size: 1.5rem; 
+            cursor: pointer; transition: color 0.3s, transform 0.3s;
+            padding: 5px; outline: none;
+        }
+        #close-msg-btn:hover {
+            color: #ff1493; transform: scale(1.2) rotate(90deg);
+        }
+
+        /* --- NÚT MỞ LẠI HỘP THƯ (PHONG BÌ) --- */
+        #reopen-msg-btn {
+            position: fixed; top: 50%; right: 20px; transform: translateY(-50%);
+            background: rgba(30, 0, 40, 0.6); border: 1px solid rgba(255, 105, 180, 0.5);
+            box-shadow: 0 0 15px rgba(255, 20, 147, 0.4); backdrop-filter: blur(8px);
+            border-radius: 50%; width: clamp(45px, 8vw, 60px); height: clamp(45px, 8vw, 60px);
+            display: none; /* Ẩn ban đầu */ justify-content: center; align-items: center;
+            font-size: clamp(1.5rem, 4vw, 2rem); cursor: pointer; z-index: 20;
+            animation: floatBtn 2.5s infinite ease-in-out;
+            transition: box-shadow 0.3s, transform 0.3s;
+        }
+        #reopen-msg-btn:hover {
+            box-shadow: 0 0 25px rgba(255, 20, 147, 0.8);
+            /* Phóng to một chút khi hover */
+            transform: translateY(-50%) scale(1.1) !important; 
+        }
+        @keyframes floatBtn {
+            0%, 100% { margin-top: 0; }
+            50% { margin-top: -15px; }
+        }
+
+        /* CSS Ảnh rơi */
+        .falling-img {
+            position: absolute; width: clamp(100px, 15vw, 180px); height: clamp(140px, 20vw, 240px); 
+            object-fit: cover; border-radius: 10px; border: clamp(3px, 0.5vw, 5px) solid white; 
+            box-shadow: 0 10px 20px rgba(255, 20, 147, 0.5), inset 0 0 10px rgba(0,0,0,0.2);
+            top: -300px; animation: gentleFall linear forwards;
+            cursor: pointer; pointer-events: auto; transition: filter 0.3s ease; z-index: 8;
+        }
+        .falling-img:hover { filter: brightness(1.2) drop-shadow(0 0 15px #ff69b4); }
+
+        @keyframes gentleFall {
+            0% { top: -300px; transform: translateX(0) rotate(var(--startRot)); opacity: 0; }
+            10% { opacity: 1; } 85% { opacity: 1; }
+            100% { top: 120vh; transform: translateX(var(--moveX)) rotate(var(--endRot)); opacity: 0; }
+        }
+
+        /* CSS HOA VÀ TIM RƠI */
+        #decorations-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2; overflow: hidden; pointer-events: none;
+        }
+        .falling-deco {
+            position: absolute; top: -10vh; user-select: none;
+            animation: decoFall linear forwards; opacity: 0.8;
+        }
+        .blue-tulip { filter: hue-rotate(200deg); }
+        @keyframes decoFall {
+            0% { top: -10vh; transform: translateX(0) rotate(0deg); }
+            100% { top: 110vh; transform: translateX(var(--sway)) rotate(var(--rot)); }
+        }
+
+        /* MODAL PHÓNG TO ẢNH */
+        #image-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 0, 17, 0.85); backdrop-filter: blur(8px);
+            z-index: 10000; display: none; flex-direction: column;
+            justify-content: center; align-items: center; opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        #modal-img {
+            max-width: 90%; max-height: 80vh; border-radius: 15px; border: 5px solid white;
+            box-shadow: 0 0 40px rgba(255, 20, 147, 0.8);
+            transform: scale(0.8); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #image-modal.show { display: flex; opacity: 1; }
+        #image-modal.show #modal-img { transform: scale(1); }
+        #close-modal-btn {
+            margin-top: 20px; padding: 10px 25px; font-size: 1rem; font-family: 'Quicksand', sans-serif;
+            font-weight: bold; color: white; background: linear-gradient(45deg, #ff1493, #ff007f);
+            border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 5px 15px rgba(255, 20, 147, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="rotate-overlay">
+        <div class="rotate-icon">📱</div>
+        <p>Để món quà được đẹp nhất,<br>chị hãy xoay ngang điện thoại nhé!</p>
+    </div>
+
+    <audio id="bg-music" loop>
+        <source src="phep-mau.mp3" type="audio/mpeg">
+    </audio>
+
+    <canvas id="canvas"></canvas>
+    <div id="decorations-container"></div>
+    <div id="click-hint" style="display: none;">Chạm vào màn hình nhé...</div>
+
+    <div id="final-scene">
+        <div id="image-container"></div>
+        
+        <div class="message-box" id="msg-box">
+            <button id="close-msg-btn" title="Tắt lời chúc">✖</button>
+            <h1 id="title-text"></h1>
+            <p id="message-text"></p>
+            <p id="signature-text" class="signature"></p>
+        </div>
+    </div>
+
+    <div id="reopen-msg-btn" title="Mở lại lời chúc">💌</div>
+
+    <div id="image-modal">
+        <img id="modal-img" src="" alt="Zoomed Image">
+        <button id="close-modal-btn">Đóng Ảnh ✖</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const clickHint = document.getElementById('click-hint');
+        const finalScene = document.getElementById('final-scene');
+        const imageContainer = document.getElementById('image-container');
+        const decorationsContainer = document.getElementById('decorations-container');
+        const msgBox = document.getElementById('msg-box');
+        const rotateOverlay = document.getElementById('rotate-overlay');
+        
+        // Nút tắt/mở hộp chúc mừng
+        const closeMsgBtn = document.getElementById('close-msg-btn');
+        const reopenMsgBtn = document.getElementById('reopen-msg-btn');
+
+        const imageModal = document.getElementById('image-modal');
+        const modalImg = document.getElementById('modal-img');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const bgMusic = document.getElementById('bg-music');
+
+        let width, height;
+        let particles = [];
+        let backgroundStars = [];
+        let textCoordinates = [];
+        let state = 'wandering'; 
+        let isInitialized = false; 
+        
+        const particleCount = 1500; 
+        const starCount = 300;      
+
+        // --- HỆ THỐNG KIỂM TRA XOAY MÀN HÌNH ---
+        function checkOrientation() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+
+            if (height > width) {
+                rotateOverlay.style.display = 'flex';
+                clickHint.style.display = 'none';
+            } else {
+                rotateOverlay.style.display = 'none';
+                
+                if (!isInitialized) {
+                    isInitialized = true;
+                    width = canvas.width = window.innerWidth;
+                    height = canvas.height = window.innerHeight;
+                    clickHint.style.display = 'block';
+                    
+                    startFallingDecorations();
+                    init();
+                    animate();
+                } else if (state === 'wandering') {
+                    width = canvas.width = window.innerWidth;
+                    height = canvas.height = window.innerHeight;
+                    init(); 
+                }
+            }
+        }
+
+        window.addEventListener('resize', checkOrientation);
+        window.addEventListener('orientationchange', () => { setTimeout(checkOrientation, 200); });
+
+        // --- LOGIC ĐÓNG/MỞ HỘP LỜI CHÚC ---
+        closeMsgBtn.addEventListener('click', () => {
+            // Làm mờ và ẩn hộp để không cản click vào ảnh rơi
+            msgBox.style.opacity = '0';
+            msgBox.style.pointerEvents = 'none'; 
+            
+            // Hiện nút thư sau 0.5s để mượt mà
+            setTimeout(() => {
+                reopenMsgBtn.style.display = 'flex';
+            }, 500);
+        });
+
+        reopenMsgBtn.addEventListener('click', () => {
+            // Giấu nút thư đi
+            reopenMsgBtn.style.display = 'none';
+            
+            // Hiện lại hộp lời chúc nguyên vẹn
+            msgBox.style.opacity = '1';
+            msgBox.style.pointerEvents = 'auto'; 
+        });
+
+
+        // --- HỆ THỐNG CANVAS ---
+        function getTextCoordinates() {
+            const offCanvas = document.createElement('canvas');
+            const offCtx = offCanvas.getContext('2d');
+            offCanvas.width = width; offCanvas.height = height;
+
+            let fontSize = Math.min(height * 0.4, 150); 
+            offCtx.font = `bold ${fontSize}px 'Quicksand', sans-serif`;
+            offCtx.fillStyle = 'white';
+            offCtx.textAlign = 'center';
+            offCtx.textBaseline = 'middle';
+            offCtx.fillText('8 / 3', width / 2, height * 0.35); 
+            
+            offCtx.font = `bold ${fontSize / 3}px 'Quicksand', sans-serif`;
+            offCtx.fillText('Happy Women\'s Day', width / 2, height * 0.65);
+
+            const imageData = offCtx.getImageData(0, 0, width, height).data;
+            const coords = [];
+            const gap = 5; 
+            for (let y = 0; y < height; y += gap) {
+                for (let x = 0; x < width; x += gap) {
+                    const alpha = imageData[(y * width + x) * 4 + 3];
+                    if (alpha > 128) coords.push({ x, y });
+                }
+            }
+            return coords;
+        }
+
+        class BackgroundStar {
+            constructor() {
+                this.x = Math.random() * width; this.y = Math.random() * height;
+                this.size = Math.random() * 1.5;
+                this.speedX = (Math.random() - 0.5) * 0.5; this.speedY = (Math.random() - 0.5) * 0.5;
+                this.opacity = Math.random();
+            }
+            update() {
+                this.x += this.speedX; this.y += this.speedY;
+                if (this.x < 0) this.x = width; if (this.x > width) this.x = 0;
+                if (this.y < 0) this.y = height; if (this.y > height) this.y = 0;
+            }
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
+            }
+        }
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x; this.y = y;
+                this.size = Math.random() * 2 + 1;
+                const colors = ['#ff1493', '#ff007f', '#ff69b4', '#ff82ab'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.vx = (Math.random() - 0.5) * 3; this.vy = (Math.random() - 0.5) * 3;
+                this.targetX = x; this.targetY = y;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
+                ctx.shadowBlur = 8; ctx.shadowColor = this.color;
+            }
+            update() {
+                if (state === 'wandering') {
+                    this.x += this.vx; this.y += this.vy;
+                    if (this.x < 0 || this.x > width) this.vx *= -1;
+                    if (this.y < 0 || this.y > height) this.vy *= -1;
+                } else if (state === 'forming') {
+                    let dx = this.targetX - this.x; let dy = this.targetY - this.y;
+                    this.vx = this.vx * 0.8 + dx * 0.02; this.vy = this.vy * 0.8 + dy * 0.02;
+                    this.x += this.vx; this.y += this.vy;
+                } else if (state === 'exploding') {
+                    this.x += this.vx; this.y += this.vy;
+                    this.size *= 0.96; 
+                }
+            }
+        }
+
+        function init() {
+            particles = []; backgroundStars = [];
+            textCoordinates = getTextCoordinates();
+
+            for(let i = 0; i < starCount; i++) backgroundStars.push(new BackgroundStar());
+
+            for (let i = 0; i < particleCount; i++) {
+                let x = Math.random() * width; let y = Math.random() * height;
+                let p = new Particle(x, y);
+                if (textCoordinates.length > 0) {
+                    let randomIndex = Math.floor(Math.random() * textCoordinates.length);
+                    p.targetX = textCoordinates[randomIndex].x;
+                    p.targetY = textCoordinates[randomIndex].y;
+                }
+                particles.push(p);
+            }
+        }
+
+        function animate() {
+            if(!isInitialized) return; 
+            
+            ctx.fillStyle = 'rgba(5, 0, 17, 0.25)'; 
+            ctx.fillRect(0, 0, width, height);
+            ctx.shadowBlur = 0; 
+            backgroundStars.forEach(star => { star.update(); star.draw(); });
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animate);
+        }
+
+        function typeWriter(elementId, text, speed, callback) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = ''; el.classList.add('typing-cursor'); 
+            let i = 0;
+            function type() {
+                if (i < text.length) {
+                    if (text.charAt(i) === '\n') { el.innerHTML += '<br>'; } 
+                    else { el.innerHTML += text.charAt(i); }
+                    i++; setTimeout(type, speed);
+                } else {
+                    el.classList.remove('typing-cursor'); 
+                    if (callback) callback();
+                }
+            }
+            type();
+        }
+
+        // --- SỰ KIỆN CLICK MÀN HÌNH LẦN ĐẦU ---
+        window.addEventListener('click', (e) => {
+            // Ngăn chặn nếu bấm nhầm các nút điều khiển
+            if(!isInitialized || rotateOverlay.style.display === 'flex' || 
+               e.target.id === 'close-modal-btn' || e.target.tagName === 'IMG' || 
+               e.target.id === 'close-msg-btn' || e.target.id === 'reopen-msg-btn') return;
+
+            if (state === 'wandering') {
+                state = 'forming';
+                clickHint.style.display = 'none'; 
+                
+                bgMusic.play().catch(error => console.log("Trình duyệt chặn phát nhạc"));
+                
+                setTimeout(() => {
+                    state = 'exploding';
+                    particles.forEach(p => {
+                        let angle = Math.atan2(p.y - height/2, p.x - width/2);
+                        let force = Math.random() * 15 + 5; 
+                        p.vx = Math.cos(angle) * force; p.vy = Math.sin(angle) * force;
+                    });
+
+                    setTimeout(() => {
+                        finalScene.style.display = 'block';
+                        startFallingImages();
+
+                        // Bật Hộp Lời Chúc Lên
+                        setTimeout(() => { 
+                            msgBox.style.opacity = '1'; 
+                            msgBox.style.pointerEvents = 'auto'; // Cho phép nhận click (vào nút Tắt)
+                        }, 500);
+
+                        const titleText = "Chúc Mừng 8/3";
+                        const bodyText = "Nhân ngày Quốc tế Phụ nữ,\nChúc chị luôn xinh đẹp, vui vẻ và tràn ngập niềm vui.\nMong chị luôn hạnh phúc và luôn tươi cười với chính mình.\n Chúc chị gặp được những điều tuyệt vời nhất trong cuộc sống!";
+                        const sigText = "Mãi hạnh phúc nhé chị! ❤️";
+
+                        setTimeout(() => {
+                            typeWriter('title-text', titleText, 120, () => {
+                                setTimeout(() => {
+                                    typeWriter('message-text', bodyText, 50, () => { 
+                                        setTimeout(() => { typeWriter('signature-text', sigText, 80); }, 400);
+                                    });
+                                }, 400);
+                            });
+                        }, 1000); 
+                    }, 800);
+                }, 4000); 
+            }
+        });
+
+        // --- Hàm tạo Hoa và Tim rơi ---
+        let decoInterval;
+        function startFallingDecorations() {
+            if(decoInterval) return; 
+
+            const decoItems = ['❤️', '🪻', '🌷']; 
+            
+            function createDeco() {
+                if (rotateOverlay.style.display === 'flex') return; 
+
+                const el = document.createElement('div');
+                el.classList.add('falling-deco');
+                const type = decoItems[Math.floor(Math.random() * decoItems.length)];
+                el.innerText = type;
+                if (type === '🌷') el.classList.add('blue-tulip');
+
+                el.style.left = Math.random() * 100 + 'vw';
+                el.style.fontSize = (Math.random() * 1.5 + 1) + 'rem';
+                
+                let duration = Math.random() * 6 + 4; 
+                el.style.animationDuration = duration + 's';
+
+                let sway = (Math.random() - 0.5) * 150 + 'px';
+                let rot = (Math.random() - 0.5) * 360 + 'deg';
+                el.style.setProperty('--sway', sway);
+                el.style.setProperty('--rot', rot);
+
+                decorationsContainer.appendChild(el);
+                setTimeout(() => { el.remove(); }, duration * 1000);
+            }
+
+            decoInterval = setInterval(createDeco, 500);
+        }
+
+        // --- Logic Ảnh Rơi ---
+        function startFallingImages() {
+            const imageUrls = [
+            'image/a1.jpg',
+            'image/a2.jpg',
+            'image/a3.JPG',
+            'image/a4.JPG',
+            'image/a5.jpg',
+            'image/a6.jpg',
+            'image/a7.jpg',
+            'image/a8.jpg',
+            'image/a9.jpg',
+            'image/a10.jpg',
+            'image/a11.jpg',
+            'image/a12.jpg',
+            'image/a13.JPG',
+            'image/a14.jpg',
+            'image/a15.PNG'
+            ];
+
+            function createFallingImage() {
+                const img = document.createElement('img');
+                img.src = imageUrls[Math.floor(Math.random() * imageUrls.length)];
+                img.classList.add('falling-img');
+                
+                img.style.left = Math.random() * 80 + 10 + 'vw'; 
+                
+                let startRot = (Math.random() - 0.5) * 40 + 'deg';
+                let endRot = (Math.random() - 0.5) * 80 + 'deg';
+                let moveX = (Math.random() - 0.5) * 150 + 'px'; 
+                
+                img.style.setProperty('--startRot', startRot);
+                img.style.setProperty('--endRot', endRot);
+                img.style.setProperty('--moveX', moveX);
+
+                let duration = Math.random() * 5 + 7; 
+                img.style.animationDuration = duration + 's';
+
+                img.addEventListener('click', function(e) {
+                    e.stopPropagation(); 
+                    modalImg.src = this.src;
+                    imageModal.classList.add('show');
+                });
+
+                imageContainer.appendChild(img);
+                setTimeout(() => { img.remove(); }, duration * 1000);
+            }
+
+            setInterval(createFallingImage, 2500); 
+            createFallingImage(); 
+        }
+
+        // --- Logic Đóng Modal ---
+        closeModalBtn.addEventListener('click', () => { imageModal.classList.remove('show'); });
+        imageModal.addEventListener('click', (e) => {
+            if (e.target === imageModal) { imageModal.classList.remove('show'); }
+        });
+
+        // KÍCH HOẠT KIỂM TRA LẦN ĐẦU
+        checkOrientation();
+
+    </script>
+</body>
+</html>

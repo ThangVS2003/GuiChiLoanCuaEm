@@ -1,0 +1,113 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #05050a; /* Đen vũ trụ sâu thẳm */
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    position: relative;
+}
+
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* Các lớp UI đè lên trên Canvas */
+.overlay-ui {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    text-align: center;
+    transition: opacity 0.5s ease;
+    cursor: pointer;
+}
+
+#intro-text h1 {
+    font-size: 2rem;
+    color: #ff4d6d;
+    animation: pulse 2s infinite;
+    text-shadow: 0 0 15px rgba(255, 77, 109, 0.8);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+}
+
+.active { opacity: 1; pointer-events: auto; }
+.hidden { opacity: 0; pointer-events: none; visibility: hidden; }
+
+/* --- Hiệu ứng ảnh rơi (Animator) --- */
+#falling-gallery {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 5;
+    pointer-events: none; /* Không cản trở click */
+}
+
+.falling-img {
+    position: absolute;
+    width: 150px; height: 150px;
+    background-image: var(--bg);
+    background-size: cover;
+    background-position: center;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(255, 77, 109, 0.5);
+    top: -200px; /* Khởi đầu ở ngoài màn hình phía trên */
+}
+
+/* Kích hoạt class .fall để ảnh rơi xuống */
+.falling-img.fall {
+    animation: dropDown 3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* Thiết lập vị trí và độ trễ ngẫu nhiên cho 5 ảnh */
+.img1 { left: 10%; animation-delay: 0.2s; }
+.img2 { right: 15%; animation-delay: 0.5s; }
+.img3 { left: 30%; animation-delay: 0.8s; }
+.img4 { right: 35%; animation-delay: 1.1s; }
+.img5 { left: 50%; animation-delay: 1.4s; }
+
+@keyframes dropDown {
+    0% { transform: translateY(0) rotate(-10deg); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translateY(120vh) rotate(20deg); opacity: 0; }
+}
+
+/* --- Khung lời chúc xuất hiện ở giữa --- */
+#greeting-box {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -40%);
+    z-index: 20;
+    background: rgba(20, 20, 30, 0.8);
+    border: 2px solid #ff4d6d;
+    padding: 40px;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    text-align: center;
+    box-shadow: 0 0 50px rgba(255, 0, 85, 0.4);
+    transition: opacity 1.5s ease, transform 1.5s ease;
+}
+
+#greeting-box.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%); /* Trượt nhẹ lên */
+}
+
+#greeting-box h2 { color: #ff8fa3; margin-bottom: 20px; font-size: 2.5rem; }
+#greeting-box p { color: #fff; font-size: 1.2rem; line-height: 1.8; }
