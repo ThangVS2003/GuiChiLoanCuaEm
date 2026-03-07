@@ -37,6 +37,20 @@
 
         #rotate-overlay p { font-size: 1.2rem; line-height: 1.5; padding: 0 20px; text-shadow: 0 0 10px #ff1493; }
 
+        /* --- NÚT BẬT/TẮT NHẠC --- */
+        #mute-btn {
+            position: fixed; top: 20px; right: 20px; z-index: 10000;
+            background: rgba(30, 0, 40, 0.6); border: 1px solid rgba(255, 105, 180, 0.5);
+            box-shadow: 0 0 10px rgba(255, 20, 147, 0.4); backdrop-filter: blur(8px);
+            border-radius: 50%; width: clamp(40px, 8vw, 50px); height: clamp(40px, 8vw, 50px);
+            display: flex; justify-content: center; align-items: center;
+            font-size: clamp(1.2rem, 3vw, 1.5rem); cursor: pointer; transition: all 0.3s ease;
+            color: white; outline: none;
+        }
+        #mute-btn:hover {
+            box-shadow: 0 0 20px rgba(255, 20, 147, 0.8); transform: scale(1.1);
+        }
+
         /* --- CÁC THÀNH PHẦN CHÍNH --- */
         #canvas { position: absolute; top: 0; left: 0; z-index: 1; }
 
@@ -68,7 +82,6 @@
             padding: clamp(20px, 4vh, 50px) clamp(30px, 5vw, 60px); 
             border-radius: 24px; text-align: center; 
             width: max-content; max-width: 85%; 
-            /* Ban đầu ẩn và không nhận click để không chặn ảnh */
             opacity: 0; pointer-events: none; transition: opacity 0.8s ease;
             z-index: 10;
         }
@@ -110,20 +123,16 @@
             background: rgba(30, 0, 40, 0.6); border: 1px solid rgba(255, 105, 180, 0.5);
             box-shadow: 0 0 15px rgba(255, 20, 147, 0.4); backdrop-filter: blur(8px);
             border-radius: 50%; width: clamp(45px, 8vw, 60px); height: clamp(45px, 8vw, 60px);
-            display: none; /* Ẩn ban đầu */ justify-content: center; align-items: center;
+            display: none; justify-content: center; align-items: center;
             font-size: clamp(1.5rem, 4vw, 2rem); cursor: pointer; z-index: 20;
             animation: floatBtn 2.5s infinite ease-in-out;
             transition: box-shadow 0.3s, transform 0.3s;
         }
         #reopen-msg-btn:hover {
             box-shadow: 0 0 25px rgba(255, 20, 147, 0.8);
-            /* Phóng to một chút khi hover */
             transform: translateY(-50%) scale(1.1) !important; 
         }
-        @keyframes floatBtn {
-            0%, 100% { margin-top: 0; }
-            50% { margin-top: -15px; }
-        }
+        @keyframes floatBtn { 0%, 100% { margin-top: 0; } 50% { margin-top: -15px; } }
 
         /* CSS Ảnh rơi */
         .falling-img {
@@ -185,8 +194,10 @@
         <p>Để món quà được đẹp nhất,<br>chị hãy xoay ngang điện thoại nhé!</p>
     </div>
 
-    <audio id="bg-music" loop>
-        <source src="phep-mau.mp3" type="audio/mpeg">
+    <button id="mute-btn" title="Bật/Tắt Nhạc">🔊</button>
+
+    <audio id="bg-music" autoplay loop preload="auto">
+        <source src="sound.mp3" type="audio/mpeg">
     </audio>
 
     <canvas id="canvas"></canvas>
@@ -221,9 +232,10 @@
         const msgBox = document.getElementById('msg-box');
         const rotateOverlay = document.getElementById('rotate-overlay');
         
-        // Nút tắt/mở hộp chúc mừng
+        // Các nút điều khiển
         const closeMsgBtn = document.getElementById('close-msg-btn');
         const reopenMsgBtn = document.getElementById('reopen-msg-btn');
+        const muteBtn = document.getElementById('mute-btn');
 
         const imageModal = document.getElementById('image-modal');
         const modalImg = document.getElementById('modal-img');
@@ -239,6 +251,25 @@
         
         const particleCount = 1500; 
         const starCount = 300;      
+
+        // --- CỐ GẮNG CHẠY NHẠC TỰ ĐỘNG ---
+        window.addEventListener('load', () => {
+            bgMusic.play().catch(() => {
+                console.log("Trình duyệt chặn autoplay, chờ click đầu tiên...");
+            });
+        });
+
+        // --- LOGIC NÚT BẬT/TẮT NHẠC ---
+        muteBtn.addEventListener('click', (e) => {
+            if (bgMusic.muted || bgMusic.paused) {
+                bgMusic.muted = false;
+                bgMusic.play();
+                muteBtn.innerHTML = '🔊';
+            } else {
+                bgMusic.muted = true;
+                muteBtn.innerHTML = '🔇';
+            }
+        });
 
         // --- HỆ THỐNG KIỂM TRA XOAY MÀN HÌNH ---
         function checkOrientation() {
@@ -273,25 +304,16 @@
 
         // --- LOGIC ĐÓNG/MỞ HỘP LỜI CHÚC ---
         closeMsgBtn.addEventListener('click', () => {
-            // Làm mờ và ẩn hộp để không cản click vào ảnh rơi
             msgBox.style.opacity = '0';
             msgBox.style.pointerEvents = 'none'; 
-            
-            // Hiện nút thư sau 0.5s để mượt mà
-            setTimeout(() => {
-                reopenMsgBtn.style.display = 'flex';
-            }, 500);
+            setTimeout(() => { reopenMsgBtn.style.display = 'flex'; }, 500);
         });
 
         reopenMsgBtn.addEventListener('click', () => {
-            // Giấu nút thư đi
             reopenMsgBtn.style.display = 'none';
-            
-            // Hiện lại hộp lời chúc nguyên vẹn
             msgBox.style.opacity = '1';
             msgBox.style.pointerEvents = 'auto'; 
         });
-
 
         // --- HỆ THỐNG CANVAS ---
         function getTextCoordinates() {
@@ -417,16 +439,20 @@
 
         // --- SỰ KIỆN CLICK MÀN HÌNH LẦN ĐẦU ---
         window.addEventListener('click', (e) => {
-            // Ngăn chặn nếu bấm nhầm các nút điều khiển
+            // Loại trừ click nhầm các nút điều khiển
             if(!isInitialized || rotateOverlay.style.display === 'flex' || 
                e.target.id === 'close-modal-btn' || e.target.tagName === 'IMG' || 
-               e.target.id === 'close-msg-btn' || e.target.id === 'reopen-msg-btn') return;
+               e.target.id === 'close-msg-btn' || e.target.id === 'reopen-msg-btn' ||
+               e.target.id === 'mute-btn') return;
 
             if (state === 'wandering') {
                 state = 'forming';
                 clickHint.style.display = 'none'; 
                 
-                bgMusic.play().catch(error => console.log("Trình duyệt chặn phát nhạc"));
+                // Đảm bảo nhạc chắc chắn phát (nếu trình duyệt nãy giờ vẫn đang chặn)
+                bgMusic.muted = false;
+                bgMusic.play().catch(error => console.log("Lỗi nhạc:", error));
+                muteBtn.innerHTML = '🔊';
                 
                 setTimeout(() => {
                     state = 'exploding';
@@ -440,10 +466,9 @@
                         finalScene.style.display = 'block';
                         startFallingImages();
 
-                        // Bật Hộp Lời Chúc Lên
                         setTimeout(() => { 
                             msgBox.style.opacity = '1'; 
-                            msgBox.style.pointerEvents = 'auto'; // Cho phép nhận click (vào nút Tắt)
+                            msgBox.style.pointerEvents = 'auto'; 
                         }, 500);
 
                         const titleText = "Chúc Mừng 8/3";
